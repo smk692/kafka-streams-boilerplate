@@ -1,29 +1,25 @@
 spring:
   application:
     name: kafka-streams-boilerplate
-
-  cloud:
-    stream:
-      kafka:
-        binder:
-          brokers: 172.11.70.2:29092,172.11.70.2:29093,172.11.70.2:29094
-          configuration:
-            commit.interval.ms: 1000
-      bindings:
-        processStreams-in-0:
-          destination: input-topic
-          content-type: application/json
-        processStreams-out-0:
-          destination: output-topic
-          content-type: application/json
   kafka:
-    bootstrap-servers: 172.11.70.2:29092,172.11.70.2:29093,172.11.70.2:29094
+    bootstrap-servers: 172.11.70.2:29092,172.11.70.2:29093,172.11.70.2:29094  # Kafka 클러스터의 주소
+    consumer:
+      group-id: kafka-streams-group    # Kafka Consumer Group ID
+      auto-offset-reset: earliest      # 새로운 컨슈머 그룹에 대해 가장 오래된 메시지부터 읽기 시작
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
     streams:
-      application-id: kafka-streams-app
+      application-id: kafka-streams-boilerplate  # Kafka Streams 애플리케이션 ID
       bootstrap-servers: 172.11.70.2:29092,172.11.70.2:29093,172.11.70.2:29094
-#      default:
-#        key-serializer: org.apache.kafka.common.serialization.Serdes$StringSerde
-#        key-deserializer: org.apache.kafka.common.serialization.Serdes$StringSerde
-#        value-serializer: org.apache.kafka.common.serialization.Serdes$StringSerde
-#        value-deserializer: org.apache.kafka.common.serialization.Serdes$StringSerde
-      state-dir: ./tmp/kafka-streams
+      default:
+        key-serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        value-serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+      properties:
+        commit.interval.ms: 1000      # 오프셋 커밋 간격
+        cache.max.bytes.buffering: 0  # 캐싱 비활성화
+      state-dir: /tmp/kafka-streams # 상태 저장 디렉토리 경로
+
+logging:
+  level:
+    root: INFO

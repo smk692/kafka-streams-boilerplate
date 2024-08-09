@@ -20,13 +20,18 @@ repositories {
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.cloud:spring-cloud-stream")
-    implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka:4.1.2")
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.kafka:spring-kafka")
     implementation("org.apache.kafka:kafka-streams")
-    implementation("org.apache.kafka:kafka-clients")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-stdlib")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+
+    // Spring Boot DevTools (optional, for better development experience)
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    // Spring Boot Actuator (optional, for monitoring and management)
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.apache.kafka:kafka-streams-test-utils")

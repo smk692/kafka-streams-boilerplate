@@ -1,3 +1,6 @@
 package com.son.boilerplate.app.model
 
-data class ARecord(val orderId: String, val paymentStatus: String)
+data class ARecord(
+    val id: String,
+    val value: String
+)

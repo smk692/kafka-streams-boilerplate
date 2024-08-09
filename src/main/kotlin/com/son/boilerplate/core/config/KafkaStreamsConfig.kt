@@ -1,15 +1,12 @@
 package com.son.boilerplate.core.config
 
 import org.apache.kafka.common.serialization.Serdes
-import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.StreamsConfig
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.kafka.config.KafkaStreamsConfiguration
-import org.springframework.kafka.config.StreamsBuilderFactoryBean
+import java.util.*
 
-@Configuration
 class KafkaStreamsConfig {
 
     @Value("\${spring.application.name}")
@@ -21,19 +18,13 @@ class KafkaStreamsConfig {
     @Value("\${spring.kafka.streams.state-dir}")
     private lateinit var stateDir: String
 
-    @Bean(name = ["customKafkaStreamsBuilder"])
-    fun customKafkaStreamsBuilder(): StreamsBuilderFactoryBean {
-        val props = mapOf(
-            StreamsConfig.APPLICATION_ID_CONFIG to applicationName,
-            StreamsConfig.BOOTSTRAP_SERVERS_CONFIG to bootstrapServers,
-            StreamsConfig.STATE_DIR_CONFIG to stateDir
-        )
-        val config = KafkaStreamsConfiguration(props)
-        return StreamsBuilderFactoryBean(config)
-    }
-
-    @Bean
-    fun streamsBuilder(customKafkaStreamsBuilder: StreamsBuilderFactoryBean): StreamsBuilder {
-        return customKafkaStreamsBuilder.getObject()
+    fun kafkaStreamsConfiguration(): StreamsConfig {
+        val props = Properties()
+        props[StreamsConfig.APPLICATION_ID_CONFIG] = applicationName
+        props[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = bootstrapServers
+        props[StreamsConfig.STATE_DIR_CONFIG] = stateDir
+        props[StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG] = Serdes.String().javaClass.name
+        props[StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG] = Serdes.String().javaClass.name
+        return StreamsConfig(props)
     }
 }
