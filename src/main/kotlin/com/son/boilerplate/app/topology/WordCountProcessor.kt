@@ -16,6 +16,7 @@ import java.util.*
 
 @KafkaStreamsTopology(name = "wordCount")
 class WordCountProcessor : TopologyBuilder {
+    override val topologyName: String = "anotherTopology"
 
     override fun buildTopology(builder: StreamsBuilder) {
         val source: KStream<String, String> = builder.stream(WordCountTopics.INPUT.topic)

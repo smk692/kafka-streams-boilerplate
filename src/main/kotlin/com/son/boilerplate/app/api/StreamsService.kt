@@ -1,7 +1,6 @@
 package com.son.boilerplate.app.api
 
 import com.son.boilerplate.core.config.KafkaStreamsManager
-import org.apache.kafka.streams.KafkaStreams
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 

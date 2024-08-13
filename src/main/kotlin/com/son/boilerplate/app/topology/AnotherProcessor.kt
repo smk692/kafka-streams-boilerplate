@@ -10,6 +10,9 @@ import org.apache.kafka.streams.kstream.Produced
 
 @KafkaStreamsTopology(name = "anotherTopology")
 class AnotherProcessor : TopologyBuilder {
+    override val topologyName: String
+        get() = TODO("Not yet implemented")
+
     override fun buildTopology(builder: StreamsBuilder) {
         val source: KStream<String, String> = builder.stream(AnotherTopologyTopics.INPUT_1.topic)
         source.to(AnotherTopologyTopics.OUTPUT.topic, Produced.with(Serdes.String(), Serdes.String()))

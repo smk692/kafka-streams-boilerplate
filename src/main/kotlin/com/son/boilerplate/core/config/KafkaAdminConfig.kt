@@ -48,26 +48,4 @@ class KafkaAdminConfig {
         return NewTopic(WordCountTopics.OUTPUT.topic, 1, 3.toShort())
     }
 
-    /**
-     * Repartition and State Store topics for WordCountProcessor and Custom Aggregations
-     */
-    @Bean
-    fun wordCountRepartitionTopic(): NewTopic {
-        return NewTopic("${StateStores.WORD_COUNT_STORE.store}-repartition", 1, 3.toShort())
-    }
-
-    @Bean
-    fun wordCountStateStoreTopic(): NewTopic {
-        return NewTopic("${StateStores.WORD_COUNT_STORE.store}-changelog", 1, 3.toShort())
-    }
-
-    @Bean
-    fun customRepartitionTopic(): NewTopic {
-        return NewTopic("${StateStores.CUSTOM_AGGREGATE_STORE.store}-repartition", 1, 3.toShort())
-    }
-
-    @Bean
-    fun customStateStoreTopic(): NewTopic {
-        return NewTopic("${StateStores.CUSTOM_AGGREGATE_STORE.store}-changelog", 1, 3.toShort())
-    }
 }

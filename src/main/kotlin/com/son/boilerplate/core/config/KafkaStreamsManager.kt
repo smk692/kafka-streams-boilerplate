@@ -44,19 +44,21 @@ class KafkaStreamsManager(
         }
 
         topologyBuilders.forEach { builder ->
-            val annotation = AnnotatedElementUtils.findMergedAnnotation(builder::class.java, KafkaStreamsTopology::class.java)
-            if (annotation != null) {
-                val name = annotation.name
-                val streams = createKafkaStreams(builder, name)
-                kafkaStreamsMap[name] = streams
-                try {
-                    streams.start()
-                    logger.info("Started Kafka Streams for topology '$name'.")
-                } catch (e: Exception) {
-                    logger.error("Error starting Kafka Streams for topology '$name': ${e.message}", e)
-                }
+            val name = builder.topologyName
+            val streams = createKafkaStreams(builder, name)
+            kafkaStreamsMap[name] = streams
+
+            try {
+                streams.start()
+                logger.info("Started Kafka Streams for topology '$name'.")
+            } catch (e: Exception) {
+                logger.error("Error starting Kafka Streams for topology '$name': ${e.message}", e)
             }
         }
+
+        Runtime.getRuntime().addShutdownHook(Thread {
+            shutdownAllTopologies()
+        })
     }
 
 
