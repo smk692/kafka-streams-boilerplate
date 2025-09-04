@@ -1,0 +1,78 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: kafka-streams-app
+  profiles:
+    active: local
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  level:
+    com.example.kafka.streams: DEBUG
+    org.apache.kafka: INFO
+    org.springframework.kafka: INFO
+
+# 기본 Kafka 설정
+kafka:
+  bootstrap-servers: localhost:9092
+  topologies:
+    order-processing:
+      application-id: order-processing-app
+      threads: 4
+      state-dir: /tmp/kafka-streams/order-processing
+    inventory-tracking:
+      application-id: inventory-tracking-app
+      threads: 2
+      state-dir: /tmp/kafka-streams/inventory-tracking
+
+---
+# 프로덕션 환경 설정 오버라이드
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+kafka:
+  bootstrap-servers: kafka-cluster:9092
+  topologies:
+    order-processing:
+      application-id: order-processing-app-prod
+      threads: 8
+      state-dir: /opt/kafka-streams/order-processing
+    inventory-tracking:
+      application-id: inventory-tracking-app-prod
+      threads: 4
+      state-dir: /opt/kafka-streams/inventory-tracking
+
+---
+# 테스트 환경 설정
+spring:
+  config:
+    activate:
+      on-profile: test
+
+kafka:
+  bootstrap-servers: localhost:9092
+  topologies:
+    order-processing:
+      application-id: order-processing-app-test
+      threads: 1
+      state-dir: /tmp/kafka-streams-test/order-processing
+    inventory-tracking:
+      application-id: inventory-tracking-app-test
+      threads: 1
+      state-dir: /tmp/kafka-streams-test/inventory-tracking

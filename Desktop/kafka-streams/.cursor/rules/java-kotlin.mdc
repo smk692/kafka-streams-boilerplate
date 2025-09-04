@@ -1,0 +1,464 @@
+---
+globs: "**/*.java,**/*.kt"
+description: "Java 17 + Kotlin + Spring Boot 3.x 코딩 스타일"
+---
+
+# Java 17 + Kotlin 코딩 스타일 가이드
+
+## 언어별 사용 지침
+- **Java 17**: 메인 비즈니스 로직, Spring 설정, 복잡한 로직
+- **Kotlin**: DSL, 확장 함수, 데이터 클래스, 간결한 유틸리티
+- **상호운용성**: 자연스러운 Java ↔ Kotlin 호출
+
+## Java 17 모던 기능 활용
+
+### Records (불변 데이터)
+```java
+// ✅ 이벤트/DTO는 record 사용
+public record UserEvent(
+    String userId,
+    String eventType,
+    Instant timestamp,
+    Map<String, Object> properties
+) {
+    // Validation 추가 가능
+    public UserEvent {
+        Objects.requireNonNull(userId);
+        Objects.requireNonNull(eventType);
+        if (timestamp == null) {
+            timestamp = Instant.now();
+        }
+    }
+    
+    public boolean isValid() {
+        return userId != null && !userId.isBlank();
+    }
+}
+```
+
+### Pattern Matching (Preview)
+```java
+// ✅ 타입 체크와 캐스팅을 한 번에
+public String processEvent(Object event) {
+    return switch (event) {
+        case UserEvent(var userId, var type, var timestamp, var props) -> 
+            "User %s performed %s at %s".formatted(userId, type, timestamp);
+        case SystemEvent se when se.isError() -> 
+            "Error: " + se.getMessage();
+        case null -> "Null event";
+        default -> "Unknown event: " + event.getClass().getSimpleName();
+    };
+}
+```
+
+### Virtual Threads (Spring Boot 3.2+)
+```java
+// ✅ 설정에서 Virtual Threads 활성화
+@Configuration
+public class VirtualThreadConfig {
+    
+    @Bean
+    public TaskExecutor taskExecutor() {
+        return new VirtualThreadTaskExecutor("kafka-streams-");
+    }
+}
+
+// ✅ 비동기 처리에 Virtual Threads 활용
+@Async
+@Service
+public class AsyncEventProcessor {
+    
+    public CompletableFuture<Void> processEventAsync(UserEvent event) {
+        // Heavy computation on virtual thread
+        return CompletableFuture.runAsync(() -> {
+            processEvent(event);
+        }, taskExecutor);
+    }
+}
+```
+
+### Text Blocks
+```java
+// ✅ 복잡한 JSON/SQL은 Text Blocks
+private static final String KAFKA_TOPOLOGY_DESCRIPTION = """
+    Kafka Streams Topology:
+    - Source: input-events
+    - Processor: event-validator
+    - Processor: event-transformer  
+    - Sink: output-events
+    """;
+
+private static final String JSON_SCHEMA = """
+    {
+        "type": "object",
+        "properties": {
+            "userId": {"type": "string"},
+            "timestamp": {"type": "string", "format": "date-time"}
+        }
+    }
+    """;
+```
+
+## Kotlin 활용 패턴
+
+### Data Classes & Sealed Classes
+```kotlin
+// ✅ 이벤트 계층 구조
+sealed class StreamEvent {
+    abstract val eventId: String
+    abstract val timestamp: Instant
+    
+    data class UserRegistered(
+        override val eventId: String,
+        override val timestamp: Instant,
+        val userId: String,
+        val email: String
+    ) : StreamEvent()
+    
+    data class PaymentProcessed(
+        override val eventId: String,
+        override val timestamp: Instant,
+        val userId: String,
+        val amount: BigDecimal,
+        val currency: String
+    ) : StreamEvent()
+    
+    data class ErrorEvent(
+        override val eventId: String,
+        override val timestamp: Instant,
+        val error: String,
+        val originalEvent: Any? = null
+    ) : StreamEvent()
+}
+```
+
+### Extension Functions
+```kotlin
+// ✅ Java 컬렉션 확장
+fun <T> List<T>.chunkedBySize(maxSize: Int): List<List<T>> = 
+    chunked(maxSize)
+
+fun <K, V> Map<K, V>.getOrThrow(key: K): V = 
+    this[key] ?: throw NoSuchElementException("Key $key not found")
+
+// ✅ KStream 확장
+fun <K, V> KStream<K, V>.filterNotNull(): KStream<K, V> = 
+    filter { _, value -> value != null }
+
+fun <K, V> KStream<K, V>.logProcessing(tag: String): KStream<K, V> = 
+    peek { key, _ -> log.debug("[$tag] Processing key: $key") }
+```
+
+### Type-Safe Builders
+```kotlin
+// ✅ DSL 스타일 설정
+class KafkaStreamsConfigBuilder {
+    private val properties = mutableMapOf<String, Any>()
+    
+    fun applicationId(id: String) = apply { properties[StreamsConfig.APPLICATION_ID_CONFIG] = id }
+    fun bootstrapServers(servers: String) = apply { properties[StreamsConfig.BOOTSTRAP_SERVERS_CONFIG] = servers }
+    fun exactlyOnce() = apply { properties[StreamsConfig.PROCESSING_GUARANTEE_CONFIG] = StreamsConfig.EXACTLY_ONCE_V2 }
+    
+    fun build(): Properties = Properties().apply { putAll(properties) }
+}
+
+// 사용
+val streamsConfig = KafkaStreamsConfigBuilder()
+    .applicationId("my-streams-app")
+    .bootstrapServers("localhost:9092")
+    .exactlyOnce()
+    .build()
+```
+
+## Spring Boot 3.x 활용
+
+### Native Compilation 지원
+```java
+// ✅ GraalVM Native 힌트
+@RegisterReflectionForBinding({
+    UserEvent.class,
+    PaymentEvent.class,
+    StreamEvent.class
+})
+@SpringBootApplication
+public class KafkaStreamsApplication {
+    
+    public static void main(String[] args) {
+        SpringApplication.run(KafkaStreamsApplication.class, args);
+    }
+}
+```
+
+### Configuration Properties (Type-Safe)
+```kotlin
+// ✅ Kotlin data class 설정
+@ConfigurationProperties(prefix = "app.kafka")
+data class KafkaProperties(
+    val streams: StreamsProperties,
+    val topics: TopicsProperties,
+    val monitoring: MonitoringProperties
+) {
+    data class StreamsProperties(
+        val applicationId: String,
+        val bootstrapServers: String,
+        val numStreamThreads: Int = 3,
+        val replicationFactor: Int = 3,
+        val exactlyOnce: Boolean = true
+    )
+    
+    data class TopicsProperties(
+        val inputTopic: String,
+        val outputTopic: String,
+        val errorTopic: String,
+        val dlqTopic: String
+    )
+    
+    data class MonitoringProperties(
+        val enabled: Boolean = true,
+        val metricsIntervalMs: Long = 30000
+    )
+}
+```
+
+### Bean Validation
+```java
+// ✅ 자동 검증
+@RestController
+@Validated
+public class StreamsController {
+    
+    @PostMapping("/events")
+    public ResponseEntity<Void> sendEvent(
+        @Valid @RequestBody UserEventRequest request
+    ) {
+        eventPublisher.publish(request.toEvent());
+        return ResponseEntity.accepted().build();
+    }
+}
+
+public record UserEventRequest(
+    @NotBlank @Size(min = 3, max = 50) String userId,
+    @NotBlank String eventType,
+    @NotNull @Valid Map<String, Object> properties
+) {
+    public UserEvent toEvent() {
+        return new UserEvent(userId, eventType, Instant.now(), properties);
+    }
+}
+```
+
+## 에러 처리 패턴
+
+### Java 17 + Exception Handling
+```java
+// ✅ Sealed Interface for Results (Java 17)
+public sealed interface ProcessingResult 
+    permits ProcessingResult.Success, ProcessingResult.Error {
+    
+    record Success(String eventId, Instant processedAt) implements ProcessingResult {}
+    record Error(String eventId, String error, Throwable cause) implements ProcessingResult {}
+    
+    // Pattern matching helper
+    static <T> T handle(ProcessingResult result, 
+                       Function<Success, T> onSuccess,
+                       Function<Error, T> onError) {
+        return switch (result) {
+            case Success success -> onSuccess.apply(success);
+            case Error error -> onError.apply(error);
+        };
+    }
+}
+```
+
+### Kotlin Error Handling
+```kotlin
+// ✅ Result 타입 활용
+sealed class EventResult<out T> {
+    data class Success<T>(val value: T) : EventResult<T>()
+    data class Error(val error: String, val cause: Throwable? = null) : EventResult<Nothing>()
+    
+    inline fun <U> map(transform: (T) -> U): EventResult<U> = when (this) {
+        is Success -> Success(transform(value))
+        is Error -> this
+    }
+    
+    inline fun onSuccess(action: (T) -> Unit): EventResult<T> = also {
+        if (this is Success) action(value)
+    }
+    
+    inline fun onError(action: (String, Throwable?) -> Unit): EventResult<T> = also {
+        if (this is Error) action(error, cause)
+    }
+}
+
+// 사용
+fun processEvent(event: UserEvent): EventResult<ProcessedEvent> = try {
+    val processed = transformEvent(event)
+    EventResult.Success(processed)
+} catch (e: Exception) {
+    EventResult.Error("Processing failed for ${event.userId}", e)
+}
+```
+
+## 로깅 & 모니터링
+
+### Structured Logging
+```java
+// ✅ Logback + Structured Logging
+@Slf4j
+@Component
+public class EventProcessor {
+    
+    public void processEvent(UserEvent event) {
+        // MDC for correlation
+        try (MDCCloseable mdc = MDC.putCloseable("eventId", event.eventId())) {
+            log.info("Processing event: userId={}, type={}, timestamp={}", 
+                event.userId(), event.eventType(), event.timestamp());
+                
+            // Processing logic
+            var result = transform(event);
+            
+            log.info("Event processed successfully: duration={}ms", 
+                Duration.between(event.timestamp(), Instant.now()).toMillis());
+        } catch (Exception e) {
+            log.error("Event processing failed: userId={}, error={}", 
+                event.userId(), e.getMessage(), e);
+        }
+    }
+}
+```
+
+### Micrometer Metrics
+```kotlin
+// ✅ 커스텀 메트릭
+@Component
+class StreamsMetrics(private val meterRegistry: MeterRegistry) {
+    
+    private val eventCounter = Counter.builder("streams.events.processed")
+        .description("Number of events processed")
+        .register(meterRegistry)
+        
+    private val processingTimer = Timer.builder("streams.events.processing.duration")
+        .description("Event processing duration")
+        .register(meterRegistry)
+    
+    fun recordEventProcessed(eventType: String) {
+        eventCounter.increment(Tags.of("type", eventType))
+    }
+    
+    fun <T> timeProcessing(operation: () -> T): T {
+        return processingTimer.recordCallable(operation)!!
+    }
+}
+```
+
+## 테스팅 패턴
+
+### Java 17 + JUnit 5
+```java
+// ✅ 파라미터화 테스트 + Records
+@ParameterizedTest
+@MethodSource("eventTestCases")
+void shouldProcessEvents(EventTestCase testCase) {
+    // Given
+    var event = testCase.inputEvent();
+    
+    // When
+    var result = processor.process(event);
+    
+    // Then
+    switch (result) {
+        case ProcessingResult.Success(var eventId, var processedAt) -> {
+            assertThat(eventId).isEqualTo(event.eventId());
+            assertThat(processedAt).isAfter(event.timestamp());
+        }
+        case ProcessingResult.Error(var eventId, var error, var cause) -> {
+            fail("Expected success but got error: " + error);
+        }
+    }
+}
+
+static Stream<EventTestCase> eventTestCases() {
+    return Stream.of(
+        new EventTestCase("valid event", createValidEvent(), true),
+        new EventTestCase("invalid event", createInvalidEvent(), false)
+    );
+}
+
+record EventTestCase(String description, UserEvent inputEvent, boolean expectSuccess) {}
+```
+
+### Kotlin Testing
+```kotlin
+// ✅ Kotest 스타일
+class EventProcessorTest : StringSpec({
+    
+    "should process valid events successfully" {
+        val event = UserEvent(
+            eventId = "test-1",
+            userId = "user-123",
+            eventType = "REGISTRATION",
+            timestamp = Instant.now(),
+            properties = mapOf("email" to "test@example.com")
+        )
+        
+        val result = processor.process(event)
+        
+        result shouldBe EventResult.Success::class
+        (result as EventResult.Success).value.userId shouldBe event.userId
+    }
+    
+    "should handle processing errors gracefully" {
+        val invalidEvent = UserEvent(
+            eventId = "test-2",
+            userId = "", // Invalid
+            eventType = "REGISTRATION",
+            timestamp = Instant.now(),
+            properties = emptyMap()
+        )
+        
+        val result = processor.process(invalidEvent)
+        
+        result shouldBe EventResult.Error::class
+        (result as EventResult.Error).error shouldContain "validation failed"
+    }
+})
+```
+
+## 상호운용성 가이드
+
+### Java에서 Kotlin 호출
+```java
+// ✅ Kotlin 확장 함수는 static 메서드로 호출
+import static com.example.extensions.StreamExtensionsKt.*;
+
+public class JavaProcessor {
+    public void processStream(KStream<String, UserEvent> stream) {
+        // Kotlin extension function 호출
+        var filtered = filterNotNull(stream);
+        var logged = logProcessing(filtered, "java-processor");
+    }
+}
+```
+
+### Kotlin에서 Java 호출
+```kotlin
+// ✅ Java records를 자연스럽게 사용
+class KotlinProcessor(private val javaService: JavaEventService) {
+    
+    fun processEvent(event: UserEvent): ProcessingResult {
+        return javaService.process(event).let { result ->
+            when (result) {
+                is ProcessingResult.Success -> {
+                    log.info("Success: ${result.eventId}")
+                    result
+                }
+                is ProcessingResult.Error -> {
+                    log.error("Error: ${result.error}", result.cause)
+                    result
+                }
+            }
+        }
+    }
+}
+```

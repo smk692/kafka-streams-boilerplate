@@ -1,0 +1,172 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+gradle.properties
+!gradle/gradle.properties
+
+# Java/Kotlin
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+*.hprof
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+.factorypath
+
+# Eclipse
+.metadata/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+
+# Spring Boot
+spring.log
+application-dev.yml
+application-local.yml
+application-prod.yml
+application-staging.yml
+
+# Kafka Streams
+/tmp/
+state-store/
+kafka-logs/
+kafka-streams/
+state.dir/
+/var/folders/*/T/kafka-streams*/
+*.checkpoint
+*.checkpoint.tmp
+
+# Test
+build/reports/
+build/test-results/
+.allure/
+test-output/
+*.attach_pid*
+
+# Logs
+*.log
+logs/
+log/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+*.temp
+*.pid
+
+# Maven (if used)
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Module JARs (keep wrapper jar)
+modules/**/*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Secrets and configs
+secrets/
+config/secrets/
+*.key
+*.pem
+*.p12
+*.crt
+*.csr
+application-secrets.yml
+
+# Data files
+data/
+*.db
+*.sqlite
+
+# JVM crash logs
+hs_err_pid*
+
+# Coverage reports
+coverage/
+.nyc_output/
+jacoco/
+*.exec
+
+# Kafka specific
+kafka-logs*/
+kafka-streams*/
+__consumer_offsets-*
+__transaction_state-*
+*.rocksdb/
+*.sst
+
+# Module specific ignores
+modules/*/build/
+modules/*/bin/
+modules/*/out/
+
+# Test databases and temp files
+testdb/
+h2/
+derby/
+
+# Kubernetes/Docker local files
+k8s-local/
+docker-compose.local.yml
+Dockerfile.local
+
+# Claude Code specific
+.claude/
+CLAUDE.md.backup
+
+# Performance and profiling
+*.jfr
+async-profiler-*/
+profiling/
+
+# Build artifacts specific to this project
+modules/order-processing/build/
+modules/inventory-tracking/build/
+modules/streams-app/build/
